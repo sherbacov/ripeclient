@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>ClientsRipe</AssemblyName>
+    <RootNamespace>ClientsRipe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RipeObjects\RipeDatabaseObjects.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HttpTracer" Version="2.1.1" />
+    <PackageReference Include="RestSharp" Version="107.2.1" />
+  </ItemGroup>
+
+</Project>
