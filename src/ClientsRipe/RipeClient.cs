@@ -112,13 +112,10 @@ namespace ClientsRipe
         public Task<RipeObjects> UpdateObject(RipeObject obj);
         public Task RemoveObject(RipeObject obj);
     }
-
-
-
     public class RipeClient : IRipeClient
     {
         private readonly string _baseUrl;
-        private IRipeClientAuth _auth;
+        private readonly IRipeClientAuth _auth;
         
         public RipeClient(IRipeLocation location, IRipeClientAuth auth)
         {
