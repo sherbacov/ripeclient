@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeDatabaseObjects", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeRpkiObjects", "src\RipeRpkiObjects\RipeRpkiObjects.csproj", "{6136C589-7784-44DA-80EF-DCDF21AC14B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeNuget", "RipeNuget\RipeNuget.csproj", "{69B7998A-98BF-40D9-BBA1-3B2AD5402530}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
