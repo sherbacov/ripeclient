@@ -20,7 +20,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build -c Release --no-restore
+        run: dotnet build -c Release --no-restore /p:Version=1.0.${{github.run_number}};AssemblyVersion=1.0.${{github.run_number}};FileVersion=1.0.${{github.run_number}};PackageVersion=1.0.${{github.run_number}} 
       - name: Test
         run: dotnet test --no-build --verbosity normal
       - name: Publish Nuget
