@@ -23,5 +23,7 @@ jobs:
         run: dotnet build -c Release --no-restore
       - name: Test
         run: dotnet test --no-build --verbosity normal
-      - name: Publish
+      - name: Publish Nuget
+        run: dotnet nuget push src/ClientsRipe/bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+      - name: Publish Nuget symbols
         run: dotnet nuget push src/ClientsRipe/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
