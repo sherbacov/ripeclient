@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ClientsRipe.RpkiClient.Models;
 using HttpTracer;
 using HttpTracer.Logger;
 using RestSharp;
-using RipeRpkiObjects;
 
 namespace ClientsRpki
 {

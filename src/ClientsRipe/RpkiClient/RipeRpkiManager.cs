@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using ClientsRipe;
-using RipeRpkiObjects;
+using ClientsRipe.RpkiClient.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using NodaTime.Text;

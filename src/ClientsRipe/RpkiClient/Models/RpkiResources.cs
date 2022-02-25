@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using RipeDatabaseObjects;
 
-namespace RipeRpkiObjects
+namespace ClientsRipe.RpkiClient.Models
 {
     public class RpkiResource
     {
