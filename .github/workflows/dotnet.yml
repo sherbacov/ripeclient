@@ -20,7 +20,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build -c Release --no-restore
+      run: dotnet build -IncludeReferencedProjects -c Release --no-restore
+    - name: Pack
+      run: dotnet nuget pack RipeNuget/RipeNuget.csproj -IncludeReferencedProjects
+      
+      
+      
+    
+    
     - name: Test
       run: dotnet test --no-build --verbosity normal
     - name: Publish

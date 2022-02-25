@@ -4,14 +4,25 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>ClientsRipe</AssemblyName>
     <RootNamespace>ClientsRipe</RootNamespace>
+
+    <PackageId>RipeClient</PackageId>
+    <Authors>Dmitriy Scherbakov</Authors>
+    <Description>.net core client to RIPE Database and hosted RPKI</Description>
+    <AssemblyVersion>1.0.3</AssemblyVersion>
+    <FileVersion>1.0.3</FileVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageVersion>1.0.3</PackageVersion>
+
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RipeObjects\RipeDatabaseObjects.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="HttpTracer" Version="2.1.1" />
+    <PackageReference Include="IPNetwork2" Version="2.5.386" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="NodaTime" Version="3.0.9" />
     <PackageReference Include="RestSharp" Version="107.2.1" />
   </ItemGroup>
 

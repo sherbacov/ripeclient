@@ -2,14 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientsRipe", "src\ClientsRipe\ClientsRipe.csproj", "{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientsRpki", "src\ClientsRpki\ClientsRpki.csproj", "{599E0CA3-99A8-4879-B814-75A21CAFE1DF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeDatabaseObjects", "src\RipeObjects\RipeDatabaseObjects.csproj", "{08496C01-1117-4E5A-993B-2FB54158C149}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeRpkiObjects", "src\RipeRpkiObjects\RipeRpkiObjects.csproj", "{6136C589-7784-44DA-80EF-DCDF21AC14B6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RipeNuget", "RipeNuget\RipeNuget.csproj", "{69B7998A-98BF-40D9-BBA1-3B2AD5402530}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,21 +12,5 @@ Global
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Release|Any CPU.Build.0 = Release|Any CPU
-		{599E0CA3-99A8-4879-B814-75A21CAFE1DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{599E0CA3-99A8-4879-B814-75A21CAFE1DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{599E0CA3-99A8-4879-B814-75A21CAFE1DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{599E0CA3-99A8-4879-B814-75A21CAFE1DF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{08496C01-1117-4E5A-993B-2FB54158C149}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{08496C01-1117-4E5A-993B-2FB54158C149}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{08496C01-1117-4E5A-993B-2FB54158C149}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{08496C01-1117-4E5A-993B-2FB54158C149}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6136C589-7784-44DA-80EF-DCDF21AC14B6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{69B7998A-98BF-40D9-BBA1-3B2AD5402530}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
