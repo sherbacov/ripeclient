@@ -8,9 +8,9 @@
     <PackageId>RipeClient</PackageId>
     <Authors>Dmitriy Scherbakov</Authors>
     <Description>.net core client to RIPE Database and hosted RPKI</Description>
-    <AssemblyVersion>1.0.7</AssemblyVersion>
-    <FileVersion>1.0.7</FileVersion>
-    <PackageVersion>1.0.7</PackageVersion>
+    <AssemblyVersion>1.0.8</AssemblyVersion>
+    <FileVersion>1.0.8</FileVersion>
+    <PackageVersion>1.0.8</PackageVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
 
