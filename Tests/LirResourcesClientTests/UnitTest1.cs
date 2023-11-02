@@ -6,11 +6,14 @@ public class LirResourcesClientIntegrationUnitTests
 {
     private readonly LirResourcesClient _client;
 
-    private string _apiKey;
+    private readonly string _apiKey;
     
     public LirResourcesClientIntegrationUnitTests()
     {
         _apiKey = Environment.GetEnvironmentVariable("LIR_RESOURCES_API_KEY");
+
+        if (_apiKey == null)
+            throw new ArgumentException("LIR_RESOURCES_API_KEY is not provided for tests");
         
         _client = new LirResourcesClient(new LirResourcesProductionLocation());
     }
