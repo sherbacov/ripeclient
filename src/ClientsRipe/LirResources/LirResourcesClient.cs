@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text.Json;
 using System.Threading.Tasks;
 using ClientsRipe.LirResources.Models;
 using ClientsRipe.RpkiClient.Models;
@@ -16,11 +14,6 @@ public interface ILirResourcesClient
     public bool Debug { get; set; } 
        
     public Task<LirResourcesReply> GetResources(string apiKey);
-    public IEnumerable<RpkiRoaPlain> GetRoas(string apiKey);
-
-    public Task RpkiOperation(string apiKey, RpkiOperations operations);
-    public Task RpkiOperationAdd(string apiKey, PublishRpkiRoaPlain operation);
-    public Task RpkiOperationDelete(string apiKey, PublishRpkiRoaPlain operation);
 }
 
 public class LirResourcesClient : ILirResourcesClient
@@ -95,7 +88,8 @@ public class LirResourcesClient : ILirResourcesClient
 
         var ipv6 = await GetIpv6(apiKey);
         asn.Ipv6Allocations = ipv6.Ipv6Allocations;
-        asn.Ipv6Assignments = ipv6.Ipv6Assignments;
+        // TODO: NOT IMPLEMENTED
+        //asn.Ipv6Assignments = ipv6.Ipv6Assignments;
 
         return asn;
     }
@@ -127,45 +121,5 @@ public class LirResourcesClient : ILirResourcesClient
             Console.WriteLine(e);
             throw;
         }        
-    }
-
-    public async Task RpkiOperation(string apiKey, RpkiOperations operations)
-    {
-        if (string.IsNullOrEmpty(apiKey))
-            throw new ArgumentException("API key not provided.", nameof(apiKey));
-            
-        var request = new RestRequest("roas/publish", Method.Post);
-            
-        var jsonString = JsonSerializer.Serialize(operations, options: new JsonSerializerOptions()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-            
-        request.AddBody(jsonString, "application/json");
-
-        var client = GetClient(apiKey);
-
-        try
-        {
-            var reply = await  client.PostAsync(request);
-            if (!reply.IsSuccessful)
-                throw new Exception(reply.Content);
-
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-    }
-
-    public async Task RpkiOperationAdd(string apiKey, PublishRpkiRoaPlain operation)
-    {
-        await RpkiOperation(apiKey, new RpkiOperations().Add(operation));
-    }
-
-    public async Task RpkiOperationDelete(string apiKey, PublishRpkiRoaPlain operation)
-    {
-        await RpkiOperation(apiKey, new RpkiOperations().Delete(operation));
     }
 }
