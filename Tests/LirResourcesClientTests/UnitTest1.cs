@@ -16,6 +16,8 @@ public class LirResourcesClientIntegrationUnitTests
             throw new ArgumentException("LIR_RESOURCES_API_KEY is not provided for tests");
         
         _client = new LirResourcesClient(new LirResourcesProductionLocation());
+
+        _client.Debug = true;
     }
 
     private string GetApiKey()

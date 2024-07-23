@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>ClientsRipe</AssemblyName>
     <RootNamespace>ClientsRipe</RootNamespace>
 
@@ -20,6 +19,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/sherbacov/ripeclient</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +28,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NodaTime" Version="3.0.9" />
-    <PackageReference Include="RestSharp" Version="107.2.1" />
+    <PackageReference Include="RestSharp" Version="111.3.0" />
   </ItemGroup>
 
 

@@ -6,7 +6,7 @@ public class LirResourcesReply
     public AsnResource[] AsnResources { get; set; }
     public Ipv4Allocations[] Ipv4Allocations { get; set; }
     public Ipv4Assignments[] Ipv4Assignments { get; set; }
-    public object[] Ipv4ErxResources { get; set; }
+    public Ipv4ErxResources[] Ipv4ErxResources { get; set; }
     public Ipv6Allocations[] Ipv6Allocations { get; set; }
     public object Ipv6Assignments { get; set; }
 }
@@ -60,6 +60,21 @@ public class Ipv4Assignments
         return $"{Prefix}";
     }
 }
+
+public class Ipv4ErxResources
+{
+    public string RegistrationDate { get; set; }
+    public string WhoisQueryUrl { get; set; }
+    public Ticket Ticket { get; set; }
+    public string Prefix { get; set; }
+    public string OrganisationName { get; set; }
+    
+    public override string ToString()
+    {
+        return $"{Prefix}";
+    }
+}
+
 
 
 public class AsnResource

@@ -51,18 +51,17 @@ public class LirResourcesClient : ILirResourcesClient
 
     public bool Debug { get; set; }
     
-    public IEnumerable<RpkiRoaPlain> GetRoas(string apiKey)
+    public async Task<LirResourcesReply> GetAll(string apiKey)
     {
-        var request = new RestRequest("roas");
-
-        var client = GetClient(apiKey);
-
-        var replyTask = client.GetAsync<List<RpkiRoaPlain>>(request);
-        replyTask.Wait();
-
-        return replyTask.Result;
+        return await RequestResources("", apiKey);
     }
-
+    
+    
+    public async Task<LirResourcesReply> Get(string apiKey)
+    {
+        return await RequestResources("", apiKey);
+    }
+    
     public async Task<LirResourcesReply> GetAsn(string apiKey)
     {
         return await RequestResources("asn", apiKey);
@@ -80,18 +79,11 @@ public class LirResourcesClient : ILirResourcesClient
 
     public async Task<LirResourcesReply> GetResources(string apiKey)
     {
-        var asn = await GetAsn(apiKey);
-
-        var ipv4 = await GetIpv4(apiKey);
-        asn.Ipv4Allocations = ipv4.Ipv4Allocations;
-        asn.Ipv4Assignments = ipv4.Ipv4Assignments;
-
-        var ipv6 = await GetIpv6(apiKey);
-        asn.Ipv6Allocations = ipv6.Ipv6Allocations;
-        // TODO: NOT IMPLEMENTED
-        //asn.Ipv6Assignments = ipv6.Ipv6Assignments;
-
-        return asn;
+        var resources = await GetAll(apiKey);
+        //TODO: Not implemented
+        resources.Ipv6Assignments = null;
+        
+        return resources;
     }
     
     
