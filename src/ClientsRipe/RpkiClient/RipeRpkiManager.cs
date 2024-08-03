@@ -213,7 +213,7 @@ namespace ClientsRpki
                             continue;
                         }
 
-                        var network = IPNetwork.Parse(rpkiResource);
+                        var network = IPNetwork2.Parse(rpkiResource);
 
                         if (network.AddressFamily == AddressFamily.InterNetwork)
                         {
@@ -263,7 +263,7 @@ namespace ClientsRpki
 
                 foreach (var rpkiRoaPlain in roas.ToList())
                 {
-                    var network = IPNetwork.Parse(rpkiRoaPlain.prefix);
+                    var network = IPNetwork2.Parse(rpkiRoaPlain.prefix);
 
                     if (network.AddressFamily == AddressFamily.InterNetwork)
                     {
@@ -340,7 +340,7 @@ namespace ClientsRpki
 
         private string FindKey(string route)
         {
-            var net = IPNetwork.Parse(route);
+            var net = IPNetwork2.Parse(route);
 
             string key = "";
 
@@ -354,7 +354,7 @@ namespace ClientsRpki
 
                 foreach (var rpkiResourceIPv4 in ipv4)
                 {
-                    var netRpki = IPNetwork.Parse(rpkiResourceIPv4.Inetnum);
+                    var netRpki = IPNetwork2.Parse(rpkiResourceIPv4.Inetnum);
 
                     if (netRpki.Contains(net))
                     {
