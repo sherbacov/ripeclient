@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientsRipe", "src\ClientsRipe\ClientsRipe.csproj", "{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LirResourcesClientTests", "Tests\LirResourcesClientTests\LirResourcesClientTests.csproj", "{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6EE8708-6A4E-4250-81FC-F84C3E9A5976}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
