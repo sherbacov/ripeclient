@@ -18,6 +18,16 @@ namespace RipeDatabaseObjects
         
         [XmlElement(ElementName = "attributes")]
         public Attributes Attributes { get; set; }
+
+        public override string ToString()
+        {
+            if (!string.IsNullOrEmpty(Type))
+            {
+                return $"[{Type}] {PrimaryKey}";
+            }
+            
+            return base.ToString();
+        }
     }
 
 

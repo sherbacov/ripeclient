@@ -72,6 +72,14 @@ namespace ClientsRipe
         Task<string> GetSecret();
     }
 
+    public class RipeClientAuthAnonymous : IRipeClientAuth
+    {
+        public Task<string> GetSecret()
+        {
+            return Task.FromResult("");
+        }
+    } 
+    
     public class RipeClientAuthPassword : IRipeClientAuth
     {
         private readonly string _password;
