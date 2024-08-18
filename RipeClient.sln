@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientsRipe", "src\ClientsR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LirResourcesClientTests", "Tests\LirResourcesClientTests\LirResourcesClientTests.csproj", "{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRipeClientSearch", "TestRipeClientSearch\TestRipeClientSearch.csproj", "{AFF2D021-D2D3-4195-8E1F-A23703E13372}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23E29EA6-86C6-4A59-93F2-6F4F5382EC74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFF2D021-D2D3-4195-8E1F-A23703E13372}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFF2D021-D2D3-4195-8E1F-A23703E13372}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFF2D021-D2D3-4195-8E1F-A23703E13372}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFF2D021-D2D3-4195-8E1F-A23703E13372}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
