@@ -28,4 +28,11 @@ public class Tests
         
         Assert.Pass();
     }
+
+    [Test]
+    public async Task Test2()
+    {
+        var reply =
+            await _client.Search(new RipeSearchRequest("45.150.65.0/24", ClientsRipe.TypeFilter.Route));
+    }
 }
