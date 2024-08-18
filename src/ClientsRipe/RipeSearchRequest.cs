@@ -32,6 +32,10 @@ namespace ClientsRipe
     public enum RipeSearchRequestFlags
     {
         /// <summary>
+        /// None flags
+        /// </summary>
+        None,
+        /// <summary>
         /// -M (or --all-more) - requests that the server should return all the sub-ranges
         /// that are completely contained within the reference range. When there are
         /// hierarchies of sub-ranges, all levels of the hierarchies will be returned down
