@@ -1,164 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using ClientsRipe;
 using ClientsRipe.RpkiClient.Models;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using NodaTime.Text;
 using RipeDatabaseObjects;
 
 
 namespace ClientsRpki
 {
-    public interface IRipeRpkiSettingsManager
-    {
-        public RpkiSettings LoadSettings();
-    }
-
-    public class RipeRpkiSettingsManager : IRipeRpkiSettingsManager
-    {
-        private readonly IConfiguration _cfg;
-
-        public RipeRpkiSettingsManager(IConfiguration cfg)
-        {
-            _cfg = cfg;
-        }
-        
-        public RpkiSettings LoadSettings()
-        {
-            var settings = new RpkiSettings();
-
-
-            for (var i = 0; i < 30; i++)
-            {
-                var key = _cfg[$"rpki:keys:{i}"];
-
-                if (string.IsNullOrEmpty(key))
-                    break;
-                
-                
-                settings.Keys.Add(key);
-            }
-
-            //
-            var timeout = _cfg["rpki:cache_timeout"];
-            if (string.IsNullOrEmpty(timeout))
-                timeout = "1:00:00";
-
-            var pattern = DurationPattern.CreateWithInvariantCulture("D:hh:mm");
-            settings.CacheTimeout = (int)pattern.Parse(timeout).Value.TotalSeconds;
-
-            return settings;
-        }
-    }
-
-    public interface ICacheManager
-    {
-        public void Save(List<RpkiRoa> rpkiRoa);
-        public void Save(Dictionary<RpkiResource, string> resources);
-
-        public List<RpkiRoa> LoadRpkiRoas();
-        public Dictionary<RpkiResource, string> LoadRpkiResources();
-
-        public void DropRoasCache();
-
-    }
-
-    class CacheFile
-    {
-        public List<RpkiRoa> RpkiRoa { get; set; }
-        public string Resources { get; set; }
-    }
-
-    public class CacheManager : ICacheManager
-    {
-        private RpkiSettings _settings;
-
-        public CacheManager(IRipeRpkiSettingsManager settings)
-        {
-            _settings = settings.LoadSettings();
-            
-
-            var folder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            _cacheFullName = Path.Combine(folder, CacheFileName);
-        }
-        
-        private readonly string _cacheFullName;
-        
-        private const string CacheFileName = "ripe.cache.json";
-        
-        public void Save(List<RpkiRoa> rpkiRoa)
-        {
-            var cacheFile = new CacheFile {RpkiRoa = rpkiRoa};
-            var json = JsonConvert.SerializeObject(cacheFile, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-            File.WriteAllText(_cacheFullName, json);
-        }
-
-        public void Save(Dictionary<RpkiResource, string> resources)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<RpkiRoa> LoadRpkiRoas()
-        {
-            if (!File.Exists(_cacheFullName))
-                return null;
-            
-            try
-            {
-                var content = File.ReadAllText(_cacheFullName);
-
-                var file = JsonConvert.DeserializeObject<CacheFile>(content, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-                return file.RpkiRoa;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return null;
-            }
-        }
-
-        public Dictionary<RpkiResource, string> LoadRpkiResources()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DropRoasCache()
-        {
-            if (File.Exists(_cacheFullName))
-                File.Delete(_cacheFullName);
-        }
-    }
-    
-    public interface IRipeRouteManager
-    {
-        public RpkiResources GetRpkiResources(bool allowCache = false);
-        public IEnumerable<RpkiRoa> GetRpkiRoas(bool allowCache = false);
-        public RipeRouteRPKI GetRpkiState(RipeRoute resource);
-    }
-
-    public interface IRipeRPKIRoute
-    {
-        
-    }
-    
-
-    public interface IRipeDatabaseRoute
-    {
-        public Task Add(string route, string origin);
-        public Task Remove(string route, string origin);
-        
-        public Task Add(RipeRoute route);
-        public Task Remove(RipeRoute route);
-    }
-
     public class RipeRouteManager : IRipeRouteManager, IRipeDatabaseRoute
     {
         private readonly RpkiSettings _settings;
@@ -207,7 +60,7 @@ namespace ClientsRpki
                             continue;
                         }
 
-                        if (rpkiResource.Contains("-"))
+                        if (rpkiResource.Contains('-'))
                         {
                             Console.WriteLine($"We got network - {rpkiResource}, cannot parce now. :(");
                             continue;
@@ -367,10 +220,10 @@ namespace ClientsRpki
             return key;
         }
 
-        public async Task Add(string route, string origin)
+        public async Task Add(string route, string origin, CancellationToken cancellationToken)
         {
             var routeObject = new RipeRoute(route, origin);
-            await Add(routeObject);
+            await Add(routeObject, cancellationToken);
             // ----- END DATABASE
             
             var key = FindKey(route);
@@ -392,20 +245,20 @@ namespace ClientsRpki
             await _clientRpki.RpkiOperation(key, rpkiOperations);
         }
 
-        public async Task Add(RipeRoute route)
+        public async Task Add(RipeRoute route, CancellationToken cancellationToken)
         {
-            var raw = await _clientRipe.AddObject(route);
+            var raw = await _clientRipe.AddObject(route, cancellationToken);
         }
 
-        public async Task Remove(RipeRoute route)
+        public async Task Remove(RipeRoute route, CancellationToken cancellationToken)
         {
-            await _clientRipe.RemoveObject(route);
+            await _clientRipe.RemoveObject(route, cancellationToken);
         }
 
-        public async Task Remove(string route, string origin)
+        public async Task Remove(string route, string origin, CancellationToken cancellationToken)
         {
             var routeObject = new RipeRoute(route, origin);
-            await Remove(routeObject);
+            await Remove(routeObject, cancellationToken);
         }
     }
 }
