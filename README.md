@@ -5,7 +5,7 @@ Build status master: [![.NET](https://github.com/sherbacov/ripeclient/actions/wo
 
 
 # Examples
-```
+```c#
   var ripe = new RipeClient(new RipeSecureLocation(), 
             new RipeClientAuthAnonymous()); 
 
