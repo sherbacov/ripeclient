@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using HttpTracer;
@@ -14,112 +15,6 @@ using Attribute = RipeDatabaseObjects.Attribute;
 
 namespace ClientsRipe
 {
-    public class RipeClientException : Exception
-    {
-        public RipeClientException(string message) : base(message)
-        {
-        }
-    }
-    
-    public class RipeClientBadRequestException : Exception {
-    
-        public RipeClientBadRequestException(string message) : base(message)
-        {
-        }
-
-        public ErrorMessages ErrorMessages { get; set; }
-        
-        public RipeClientBadRequestException(ErrorMessages errorMessages)
-        {
-            ErrorMessages = errorMessages;
-        }
-    }
-    
-    public class RipeClientNotFoundException : Exception
-    {
-        public RipeClientNotFoundException(string message) : base(message)
-        {
-        }
-    }
-    
-    public class RipeClientConflictException: Exception
-    {
-        public RipeClientConflictException(string content)
-        {
-            Content = content;
-        }
-        
-        public string Content { get; }
-    }
-
-    public class RipeClientAuthPasswordException : Exception
-    {
-        public RipeClientAuthPasswordException(string message) : base(message)
-        {
-            
-        }
-    }
-    
-    public class RipeSearchNotFoundException : Exception
-    {
-        public RipeSearchNotFoundException() : base() { }
-        public RipeSearchNotFoundException(string message) : base(message)  { }
-    }
-    
-
-    public interface IRipeClientAuth
-    {
-        Task<string> GetSecret();
-    }
-
-    public class RipeClientAuthAnonymous : IRipeClientAuth
-    {
-        public Task<string> GetSecret()
-        {
-            return Task.FromResult("");
-        }
-    } 
-    
-    public class RipeClientAuthPassword : IRipeClientAuth
-    {
-        private readonly string _password;
-
-        public RipeClientAuthPassword(string password)
-        {
-            _password = password;
-        }
-        
-        public Task<string> GetSecret()
-        {
-            return Task.FromResult(_password);
-        }
-    }
-    
-    public interface IRipeClient
-    {
-        public bool Debug { get; set; } 
-            
-        public IEnumerable<DatabaseObject> SearchSync(IRipeSearchRequest query);
-        
-        /// <summary>
-        /// Searching object at RIPE database
-        /// </summary>
-        /// <param name="query">Searching object. Like "91.194.10.0/24"</param>
-        /// <returns>Founded objects from RIPE Database</returns>
-        public Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query);
-
-
-        public Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source);
-        
-        /// <summary>
-        /// Add object to RIPE Database
-        /// </summary>
-        /// <param name="obj">Object to add</param>
-        /// <returns>Raw reply from RIPE</returns>
-        public Task<string> AddObject(RipeObject obj);
-        public Task<RipeObjects> UpdateObject(RipeObject obj);
-        public Task RemoveObject(RipeObject obj);
-    }
     public class RipeClient : IRipeClient
     {
         private readonly string _baseUrl;
@@ -133,12 +28,12 @@ namespace ClientsRipe
 
         public bool Debug { get; set; }
 
-        public async Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query)
+        public async Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query, CancellationToken cancellationToken)
         {
             var client = new RestClient(_baseUrl);
             var restRequest = query.GetRequest();
             
-            var queryResult = await client.ExecuteAsync<RipeObjects>(restRequest);
+            var queryResult = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken);
 
             if (queryResult.StatusCode == HttpStatusCode.NotFound)
                 return new List<DatabaseObject>();
@@ -149,12 +44,12 @@ namespace ClientsRipe
             return queryResult?.Data?.Objects?.Object;
         }
 
-        public async Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source)
+        public async Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source, CancellationToken cancellationToken)
         {
             var client = new RestClient(_baseUrl);
             var request = new RestRequest($"/{source}/{objectType}/{key}");
             
-            var queryResult = await client.ExecuteAsync<RipeObjects>(request);
+            var queryResult = await client.ExecuteAsync<RipeObjects>(request, cancellationToken);
 
             if (queryResult.StatusCode == HttpStatusCode.NotFound)
             {
@@ -169,13 +64,13 @@ namespace ClientsRipe
 
         public IEnumerable<DatabaseObject> SearchSync(IRipeSearchRequest query)
         {
-            var searchTask = Search(query);
+            var searchTask = Search(query, CancellationToken.None);
             searchTask.Wait();
 
             return searchTask.Result;
         }
 
-        public async Task<string> AddObject(RipeObject obj)
+        public async Task<string> AddObject(RipeObject obj, CancellationToken cancellationToken)
         {
             var whoisResource = new WhoisResources
             {
@@ -196,7 +91,7 @@ namespace ClientsRipe
             var source = obj["source"];
 
             if (string.IsNullOrEmpty(source))
-                throw new ArgumentOutOfRangeException(nameof(source), "Source not provided.");
+                throw new Exception("Source not provided.");
 
             databaseObj.Type = databaseObjType;
             databaseObj.Source = new Source() {Id = source};
@@ -242,7 +137,7 @@ namespace ClientsRipe
                 client = new RestClient(_baseUrl);
             }
             
-            var reply = await client.ExecuteAsync<RipeObjects>(restRequest);            
+            var reply = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken);            
 
             if (reply.StatusCode == HttpStatusCode.Conflict)
             {
@@ -267,7 +162,7 @@ namespace ClientsRipe
             return reply.Content;
         }
 
-        private string SerializerContent(WhoisResources whoisResource)
+        private static string SerializerContent(WhoisResources whoisResource)
         {
             var ns = new XmlSerializerNamespaces();
             ns.Add("", "");
@@ -281,7 +176,7 @@ namespace ClientsRipe
             return Encoding.UTF8.GetString(memoryStream.ToArray());
         }
 
-        public async Task<RipeObjects> UpdateObject(RipeObject obj)
+        public async Task<RipeObjects> UpdateObject(RipeObject obj, CancellationToken cancellationToken)
         {
             var whoisResource = new WhoisResources
             {
@@ -302,7 +197,7 @@ namespace ClientsRipe
             var databaseObj = new DatabaseWhoisObject();
 
             if (string.IsNullOrEmpty(source))
-                throw new ArgumentOutOfRangeException(nameof(source), "Source not provided.");
+                throw new Exception("Source not provided.");
 
             databaseObj.Type = databaseObjType;
             databaseObj.Source = new Source() {Id = source};
@@ -337,12 +232,12 @@ namespace ClientsRipe
             var client = new RestClient(_baseUrl);
             restRequest.AddBody(requestContent, "application/xml");
             
-            var reply = await client.ExecuteAsync<RipeObjects>(restRequest);
+            var reply = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken);
 
             return reply.Data;
         }
 
-        public async Task RemoveObject(RipeObject obj)
+        public async Task RemoveObject(RipeObject obj, CancellationToken cancellationToken)
         {
             //curl -X DELETE 'https://rest.db.ripe.net/ripe/person/pp1-ripe?password=123'
             //get object type 
@@ -352,19 +247,21 @@ namespace ClientsRipe
             var source = obj["source"];
 
             if (string.IsNullOrEmpty(source))
-                throw new ArgumentOutOfRangeException(nameof(source), "Source not provided.");
+                throw new Exception("Source not provided.");
 
             var key = obj.GetKey(false);
 
-            var restRequest = new RestRequest($"/{source}/{databaseObjType}/{key}");
-            restRequest.Method = Method.Delete;
-            
+            var restRequest = new RestRequest($"/{source}/{databaseObjType}/{key}")
+            {
+                Method = Method.Delete
+            };
+
             //AUTH method
             restRequest.AddParameter("password",  await _auth.GetSecret(), ParameterType.QueryString);
 
             var client = new RestClient(_baseUrl);
             
-            var reply = await client.ExecuteAsync(restRequest);
+            var reply = await client.ExecuteAsync(restRequest, cancellationToken);
 
             if (reply.StatusCode == HttpStatusCode.NotFound)
             {

@@ -33,6 +33,6 @@ public class Tests
     public async Task Test2()
     {
         var reply =
-            await _client.Search(new RipeSearchRequest("45.150.65.0/24", ClientsRipe.TypeFilter.Route));
+            await _client.Search(new RipeSearchRequest("45.150.65.0/24", ClientsRipe.TypeFilter.Route), CancellationToken.None);
     }
 }

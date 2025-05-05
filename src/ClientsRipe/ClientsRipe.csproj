@@ -19,7 +19,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/sherbacov/ripeclient</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,8 +27,8 @@
     <PackageReference Include="IPNetwork2" Version="3.0.667" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NodaTime" Version="3.1.11" />
-    <PackageReference Include="RestSharp" Version="111.4.1" />
+    <PackageReference Include="NodaTime" Version="3.2.0" />
+    <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
 
 
