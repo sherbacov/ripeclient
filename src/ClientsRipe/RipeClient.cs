@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using HttpTracer;
@@ -188,28 +189,51 @@ namespace ClientsRipe
     
     public interface IRipeClient
     {
-        public bool Debug { get; set; } 
-            
+        public bool Debug { get; set; }
+
+        [Obsolete("This method uses sync-over-async anti-pattern and can cause deadlocks. Use async Search() method instead. Will be removed in v2.0")]
         public IEnumerable<DatabaseObject> SearchSync(IRipeSearchRequest query);
-        
+
         /// <summary>
         /// Searching object at RIPE database
         /// </summary>
         /// <param name="query">Searching object. Like "91.194.10.0/24"</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>Founded objects from RIPE Database</returns>
-        public Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query);
+        public Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Get object by key from RIPE database
+        /// </summary>
+        /// <param name="key">Object key</param>
+        /// <param name="objectType">Object type</param>
+        /// <param name="source">Source database</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
+        /// <returns>Database object or null if not found</returns>
+        public Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source, CancellationToken cancellationToken = default);
 
-        public Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source);
-        
         /// <summary>
         /// Add object to RIPE Database
         /// </summary>
         /// <param name="obj">Object to add</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>Raw reply from RIPE</returns>
-        public Task<string> AddObject(RipeObject obj);
-        public Task<RipeObjects> UpdateObject(RipeObject obj);
-        public Task RemoveObject(RipeObject obj);
+        public Task<string> AddObject(RipeObject obj, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Update object in RIPE Database
+        /// </summary>
+        /// <param name="obj">Object to update</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
+        /// <returns>Updated object data</returns>
+        public Task<RipeObjects> UpdateObject(RipeObject obj, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Remove object from RIPE Database
+        /// </summary>
+        /// <param name="obj">Object to remove</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
+        public Task RemoveObject(RipeObject obj, CancellationToken cancellationToken = default);
     }
     public class RipeClient : IRipeClient
     {
@@ -224,12 +248,12 @@ namespace ClientsRipe
 
         public bool Debug { get; set; }
 
-        public async Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query)
+        public async Task<IEnumerable<DatabaseObject>> Search(IRipeSearchRequest query, CancellationToken cancellationToken = default)
         {
             var client = new RestClient(_baseUrl);
             var restRequest = query.GetRequest();
-            
-            var queryResult = await client.ExecuteAsync<RipeObjects>(restRequest);
+
+            var queryResult = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken).ConfigureAwait(false);
 
             if (queryResult.StatusCode == HttpStatusCode.NotFound)
                 return new List<DatabaseObject>();
@@ -240,12 +264,12 @@ namespace ClientsRipe
             return queryResult?.Data?.Objects?.Object;
         }
 
-        public async Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source)
+        public async Task<DatabaseObject> GetObjectByKey(string key, string objectType, string source, CancellationToken cancellationToken = default)
         {
             var client = new RestClient(_baseUrl);
             var request = new RestRequest($"/{source}/{objectType}/{key}");
-            
-            var queryResult = await client.ExecuteAsync<RipeObjects>(request);
+
+            var queryResult = await client.ExecuteAsync<RipeObjects>(request, cancellationToken).ConfigureAwait(false);
 
             if (queryResult.StatusCode == HttpStatusCode.NotFound)
             {
@@ -255,18 +279,21 @@ namespace ClientsRipe
             if (queryResult.Data == null)
                 throw new RipeClientNotFoundException(queryResult.StatusDescription);
 
+            if (queryResult.Data.Objects?.Object == null)
+                return null;
+
             return queryResult.Data.Objects.Object.FirstOrDefault();
         }
 
+        [Obsolete("This method uses sync-over-async anti-pattern and can cause deadlocks. Use async Search() method instead. Will be removed in v2.0")]
         public IEnumerable<DatabaseObject> SearchSync(IRipeSearchRequest query)
         {
-            var searchTask = Search(query);
-            searchTask.Wait();
-
-            return searchTask.Result;
+            // Use GetAwaiter().GetResult() instead of Wait/Result for slightly better behavior
+            // Still has deadlock risk but slightly better than Wait/Result
+            return Search(query).GetAwaiter().GetResult();
         }
 
-        public async Task<string> AddObject(RipeObject obj)
+        public async Task<string> AddObject(RipeObject obj, CancellationToken cancellationToken = default)
         {
             var whoisResource = new WhoisResources
             {
@@ -316,16 +343,16 @@ namespace ClientsRipe
             //AUTH method
             if (_auth is IRipeClientAuthEnhanced enhancedAuth)
             {
-                await enhancedAuth.ApplyAuthentication(restRequest);
+                await enhancedAuth.ApplyAuthentication(restRequest).ConfigureAwait(false);
             }
             else
             {
                 // Backward compatibility - assume password-based auth
-                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+                restRequest.AddParameter("password", await _auth.GetSecret().ConfigureAwait(false), ParameterType.QueryString);
             }
-            
+
             RestClient client;
-            
+
             if (Debug)
             {
                 var options = new RestClientOptions(_baseUrl)
@@ -340,8 +367,8 @@ namespace ClientsRipe
             {
                 client = new RestClient(_baseUrl);
             }
-            
-            var reply = await client.ExecuteAsync<RipeObjects>(restRequest);            
+
+            var reply = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken).ConfigureAwait(false);
 
             if (reply.StatusCode == HttpStatusCode.Conflict)
             {
@@ -380,7 +407,7 @@ namespace ClientsRipe
             return Encoding.UTF8.GetString(memoryStream.ToArray());
         }
 
-        public async Task<RipeObjects> UpdateObject(RipeObject obj)
+        public async Task<RipeObjects> UpdateObject(RipeObject obj, CancellationToken cancellationToken = default)
         {
             var whoisResource = new WhoisResources
             {
@@ -433,23 +460,23 @@ namespace ClientsRipe
             //AUTH method
             if (_auth is IRipeClientAuthEnhanced enhancedAuth)
             {
-                await enhancedAuth.ApplyAuthentication(restRequest);
+                await enhancedAuth.ApplyAuthentication(restRequest).ConfigureAwait(false);
             }
             else
             {
                 // Backward compatibility - assume password-based auth
-                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+                restRequest.AddParameter("password", await _auth.GetSecret().ConfigureAwait(false), ParameterType.QueryString);
             }
 
             var client = new RestClient(_baseUrl);
             restRequest.AddBody(requestContent, "application/xml");
-            
-            var reply = await client.ExecuteAsync<RipeObjects>(restRequest);
+
+            var reply = await client.ExecuteAsync<RipeObjects>(restRequest, cancellationToken).ConfigureAwait(false);
 
             return reply.Data;
         }
 
-        public async Task RemoveObject(RipeObject obj)
+        public async Task RemoveObject(RipeObject obj, CancellationToken cancellationToken = default)
         {
             //curl -X DELETE 'https://rest.db.ripe.net/ripe/person/pp1-ripe?password=123'
             //get object type 
@@ -469,17 +496,17 @@ namespace ClientsRipe
             //AUTH method
             if (_auth is IRipeClientAuthEnhanced enhancedAuth)
             {
-                await enhancedAuth.ApplyAuthentication(restRequest);
+                await enhancedAuth.ApplyAuthentication(restRequest).ConfigureAwait(false);
             }
             else
             {
                 // Backward compatibility - assume password-based auth
-                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+                restRequest.AddParameter("password", await _auth.GetSecret().ConfigureAwait(false), ParameterType.QueryString);
             }
 
             var client = new RestClient(_baseUrl);
-            
-            var reply = await client.ExecuteAsync(restRequest);
+
+            var reply = await client.ExecuteAsync(restRequest, cancellationToken).ConfigureAwait(false);
 
             if (reply.StatusCode == HttpStatusCode.NotFound)
             {

@@ -11,14 +11,20 @@ namespace ClientsRpki
 {
     public interface IRipeRpkiClient
     {
-        public bool Debug { get; set; } 
-       
-        public RpkiResourcesPlain GetResources(string apiKey);
-        public IEnumerable<RpkiRoaPlain> GetRoas(string apiKey);
+        public bool Debug { get; set; }
 
-        public Task RpkiOperation(string apiKey, RpkiOperations operations);
-        public Task RpkiOperationAdd(string apiKey, PublishRpkiRoaPlain operation);
-        public Task RpkiOperationDelete(string apiKey, PublishRpkiRoaPlain operation);
+        // Async methods (recommended)
+        Task<RpkiResourcesPlain> GetResourcesAsync(string apiKey);
+        Task<IEnumerable<RpkiRoaPlain>> GetRoasAsync(string apiKey);
+        Task RpkiOperation(string apiKey, RpkiOperations operations);
+        Task RpkiOperationAdd(string apiKey, PublishRpkiRoaPlain operation);
+        Task RpkiOperationDelete(string apiKey, PublishRpkiRoaPlain operation);
+
+        // Sync methods (deprecated - can cause deadlocks)
+        [Obsolete("Use GetResourcesAsync instead. This method uses sync-over-async anti-pattern and can cause deadlocks.")]
+        RpkiResourcesPlain GetResources(string apiKey);
+        [Obsolete("Use GetRoasAsync instead. This method uses sync-over-async anti-pattern and can cause deadlocks.")]
+        IEnumerable<RpkiRoaPlain> GetRoas(string apiKey);
     }
 
     public class RipeRpkiClient : IRipeRpkiClient
@@ -56,30 +62,36 @@ namespace ClientsRpki
 
         public bool Debug { get; set; }
 
-        public RpkiResourcesPlain GetResources(string apiKey)
+        // Async methods (recommended)
+        public async Task<RpkiResourcesPlain> GetResourcesAsync(string apiKey)
         {
             var request = new RestRequest("resources");
-
             var client = GetClient(apiKey);
 
-            var replyTask = client.GetAsync<RpkiResourcesPlain>(request);
-            replyTask.Wait();
-            var reply = replyTask.Result;
-
-            //return reply.Data;
+            var reply = await client.GetAsync<RpkiResourcesPlain>(request).ConfigureAwait(false);
             return reply;
+        }
+
+        public async Task<IEnumerable<RpkiRoaPlain>> GetRoasAsync(string apiKey)
+        {
+            var request = new RestRequest("roas");
+            var client = GetClient(apiKey);
+
+            var reply = await client.GetAsync<List<RpkiRoaPlain>>(request).ConfigureAwait(false);
+            return reply;
+        }
+
+        // Sync methods (deprecated - kept for backward compatibility)
+        public RpkiResourcesPlain GetResources(string apiKey)
+        {
+            // Use GetAwaiter().GetResult() instead of Wait/Result for slightly better behavior
+            return GetResourcesAsync(apiKey).GetAwaiter().GetResult();
         }
 
         public IEnumerable<RpkiRoaPlain> GetRoas(string apiKey)
         {
-            var request = new RestRequest("roas");
-
-            var client = GetClient(apiKey);
-
-            var replyTask = client.GetAsync<List<RpkiRoaPlain>>(request);
-            replyTask.Wait();
-
-            return replyTask.Result;
+            // Use GetAwaiter().GetResult() instead of Wait/Result for slightly better behavior
+            return GetRoasAsync(apiKey).GetAwaiter().GetResult();
         }
 
         public async Task RpkiOperation(string apiKey, RpkiOperations operations)
@@ -100,7 +112,7 @@ namespace ClientsRpki
 
             try
             {
-                var reply = await  client.PostAsync(request);
+                var reply = await client.PostAsync(request).ConfigureAwait(false);
                 if (!reply.IsSuccessful)
                     throw new Exception(reply.Content);
 
@@ -114,12 +126,12 @@ namespace ClientsRpki
 
         public async Task RpkiOperationAdd(string apiKey, PublishRpkiRoaPlain operation)
         {
-            await RpkiOperation(apiKey, new RpkiOperations().Add(operation));
+            await RpkiOperation(apiKey, new RpkiOperations().Add(operation)).ConfigureAwait(false);
         }
 
         public async Task RpkiOperationDelete(string apiKey, PublishRpkiRoaPlain operation)
         {
-            await RpkiOperation(apiKey, new RpkiOperations().Delete(operation));
+            await RpkiOperation(apiKey, new RpkiOperations().Delete(operation)).ConfigureAwait(false);
         }
     }
 }

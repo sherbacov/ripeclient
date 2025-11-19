@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ClientsRipe.LirResources.Models;
 using ClientsRipe.RpkiClient.Models;
@@ -11,9 +12,14 @@ namespace ClientsRipe.LirResources;
 
 public interface ILirResourcesClient
 {
-    public bool Debug { get; set; } 
-       
-    public Task<LirResourcesReply> GetResources(string apiKey);
+    public bool Debug { get; set; }
+
+    Task<LirResourcesReply> GetResources(string apiKey, CancellationToken cancellationToken = default);
+    Task<LirResourcesReply> GetAll(string apiKey, CancellationToken cancellationToken = default);
+    Task<LirResourcesReply> Get(string apiKey, CancellationToken cancellationToken = default);
+    Task<LirResourcesReply> GetAsn(string apiKey, CancellationToken cancellationToken = default);
+    Task<LirResourcesReply> GetIpv4(string apiKey, CancellationToken cancellationToken = default);
+    Task<LirResourcesReply> GetIpv6(string apiKey, CancellationToken cancellationToken = default);
 }
 
 public class LirResourcesClient : ILirResourcesClient
@@ -51,49 +57,49 @@ public class LirResourcesClient : ILirResourcesClient
 
     public bool Debug { get; set; }
     
-    public async Task<LirResourcesReply> GetAll(string apiKey)
+    public async Task<LirResourcesReply> GetAll(string apiKey, CancellationToken cancellationToken = default)
     {
-        return await RequestResources("", apiKey);
-    }
-    
-    
-    public async Task<LirResourcesReply> Get(string apiKey)
-    {
-        return await RequestResources("", apiKey);
-    }
-    
-    public async Task<LirResourcesReply> GetAsn(string apiKey)
-    {
-        return await RequestResources("asn", apiKey);
-    }
-    
-    public async Task<LirResourcesReply> GetIpv4(string apiKey)
-    {
-        return await RequestResources("ipv4", apiKey);
+        return await RequestResources("", apiKey, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<LirResourcesReply> GetIpv6(string apiKey)
+
+    public async Task<LirResourcesReply> Get(string apiKey, CancellationToken cancellationToken = default)
     {
-        return await RequestResources("ipv6", apiKey);
+        return await RequestResources("", apiKey, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<LirResourcesReply> GetResources(string apiKey)
+    public async Task<LirResourcesReply> GetAsn(string apiKey, CancellationToken cancellationToken = default)
     {
-        var resources = await GetAll(apiKey);
+        return await RequestResources("asn", apiKey, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<LirResourcesReply> GetIpv4(string apiKey, CancellationToken cancellationToken = default)
+    {
+        return await RequestResources("ipv4", apiKey, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<LirResourcesReply> GetIpv6(string apiKey, CancellationToken cancellationToken = default)
+    {
+        return await RequestResources("ipv6", apiKey, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<LirResourcesReply> GetResources(string apiKey, CancellationToken cancellationToken = default)
+    {
+        var resources = await GetAll(apiKey, cancellationToken).ConfigureAwait(false);
         //TODO: Not implemented
         resources.Ipv6Assignments = null;
-        
+
         return resources;
     }
     
     
-    protected virtual async Task<LirResourcesReply> RequestResources(string resource, string apiKey)
+    protected virtual async Task<LirResourcesReply> RequestResources(string resource, string apiKey, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(apiKey))
             throw new ArgumentException("API key not provided.", nameof(apiKey));
-            
+
         var request = new RestRequest(resource, Method.Get);
-        
+
         request.AddParameter("format", "json");
         request.AddParameter("jsonCallback", "?");
 
@@ -101,7 +107,7 @@ public class LirResourcesClient : ILirResourcesClient
 
         try
         {
-            var reply = await client.ExecuteAsync<LirResourcesReply>(request);
+            var reply = await client.ExecuteAsync<LirResourcesReply>(request, cancellationToken).ConfigureAwait(false);
             if (!reply.IsSuccessful)
                 throw new Exception(reply.Content);
 
@@ -112,6 +118,6 @@ public class LirResourcesClient : ILirResourcesClient
         {
             Console.WriteLine(e);
             throw;
-        }        
+        }
     }
 }
