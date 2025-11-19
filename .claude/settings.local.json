@@ -5,7 +5,8 @@
       "Bash(dotnet test:*)",
       "Bash(dotnet new:*)",
       "Bash(dotnet add reference:*)",
-      "Bash(dotnet add:*)"
+      "Bash(dotnet add:*)",
+      "Bash(dotnet clean:*)"
     ],
     "deny": [],
     "ask": []
