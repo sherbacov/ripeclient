@@ -6,7 +6,8 @@
       "Bash(dotnet new:*)",
       "Bash(dotnet add reference:*)",
       "Bash(dotnet add:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(dir /b srcClientsRipebinReleaseRipeClient.*.nupkg)"
     ],
     "deny": [],
     "ask": []
