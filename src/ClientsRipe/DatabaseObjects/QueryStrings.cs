@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace RipeDatabaseObjects
+namespace RipeDatabaseObjects;
+
+public class QueryStrings
 {
-    public class QueryStrings
-    {
-        [JsonProperty("query-string")]
-        public List<QueryString> QueryString { get; set; }
-    }
+    [JsonProperty("query-string")]
+    public List<QueryString> QueryString { get; set; }
 }

@@ -1,6 +1,5 @@
-﻿namespace RipeDatabaseObjects
+﻿namespace RipeDatabaseObjects;
+
+public class InverseLookup
 {
-    public class InverseLookup
-    {
-    }
 }

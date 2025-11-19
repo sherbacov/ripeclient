@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Xml.Serialization;
 
-namespace RipeDatabaseObjects
+namespace RipeDatabaseObjects;
+
+[Serializable]
+[XmlRoot(ElementName = "whois-resources")]
+public class WhoisResources
 {
-    [Serializable]
-    [XmlRoot(ElementName = "whois-resources")]
-    public class WhoisResources
-    {
-        [XmlElement(ElementName = "objects")]
-        public WhoisObjects Objects { get; set; }
-    }
+    [XmlElement(ElementName = "objects")]
+    public WhoisObjects Objects { get; set; }
 }

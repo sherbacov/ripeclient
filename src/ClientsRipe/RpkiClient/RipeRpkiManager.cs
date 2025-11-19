@@ -13,459 +13,458 @@ using NodaTime.Text;
 using RipeDatabaseObjects;
 
 
-namespace ClientsRpki
+namespace ClientsRpki;
+
+public interface IRipeRpkiSettingsManager
 {
-    public interface IRipeRpkiSettingsManager
+    public RpkiSettings LoadSettings();
+}
+
+public class RipeRpkiSettingsManager : IRipeRpkiSettingsManager
+{
+    private readonly IConfiguration _cfg;
+
+    public RipeRpkiSettingsManager(IConfiguration cfg)
     {
-        public RpkiSettings LoadSettings();
+        _cfg = cfg;
     }
 
-    public class RipeRpkiSettingsManager : IRipeRpkiSettingsManager
+    public RpkiSettings LoadSettings()
     {
-        private readonly IConfiguration _cfg;
+        var settings = new RpkiSettings();
 
-        public RipeRpkiSettingsManager(IConfiguration cfg)
+
+        for (var i = 0; i < 30; i++)
         {
-            _cfg = cfg;
+            var key = _cfg[$"rpki:keys:{i}"];
+
+            if (string.IsNullOrEmpty(key))
+                break;
+
+
+            settings.Keys.Add(key);
         }
-        
-        public RpkiSettings LoadSettings()
+
+        //
+        var timeout = _cfg["rpki:cache_timeout"];
+        if (string.IsNullOrEmpty(timeout))
+            timeout = "1:00:00";
+
+        var pattern = DurationPattern.CreateWithInvariantCulture("D:hh:mm");
+        settings.CacheTimeout = (int)pattern.Parse(timeout).Value.TotalSeconds;
+
+        return settings;
+    }
+}
+
+public interface ICacheManager
+{
+    // Async methods (recommended)
+    Task SaveAsync(List<RpkiRoa> rpkiRoa);
+    Task SaveAsync(Dictionary<RpkiResource, string> resources);
+    Task<List<RpkiRoa>> LoadRpkiRoasAsync();
+    Task<Dictionary<RpkiResource, string>> LoadRpkiResourcesAsync();
+    Task DropRoasCacheAsync();
+
+    // Sync methods (deprecated)
+    [Obsolete("Use SaveAsync instead to avoid blocking I/O operations")]
+    void Save(List<RpkiRoa> rpkiRoa);
+    [Obsolete("Use SaveAsync instead to avoid blocking I/O operations")]
+    void Save(Dictionary<RpkiResource, string> resources);
+    [Obsolete("Use LoadRpkiRoasAsync instead to avoid blocking I/O operations")]
+    List<RpkiRoa> LoadRpkiRoas();
+    [Obsolete("Use LoadRpkiResourcesAsync instead to avoid blocking I/O operations")]
+    Dictionary<RpkiResource, string> LoadRpkiResources();
+    [Obsolete("Use DropRoasCacheAsync instead to avoid blocking I/O operations")]
+    void DropRoasCache();
+}
+
+class CacheFile
+{
+    public List<RpkiRoa> RpkiRoa { get; set; }
+    public string Resources { get; set; }
+}
+
+public class CacheManager : ICacheManager
+{
+    private RpkiSettings _settings;
+
+    public CacheManager(IRipeRpkiSettingsManager settings)
+    {
+        _settings = settings.LoadSettings();
+
+
+        var folder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        _cacheFullName = Path.Combine(folder, CacheFileName);
+    }
+
+    private readonly string _cacheFullName;
+
+    private const string CacheFileName = "ripe.cache.json";
+
+    // Async methods (recommended)
+    public async Task SaveAsync(List<RpkiRoa> rpkiRoa)
+    {
+        var cacheFile = new CacheFile { RpkiRoa = rpkiRoa };
+        var json = JsonConvert.SerializeObject(cacheFile, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+
+        await File.WriteAllTextAsync(_cacheFullName, json).ConfigureAwait(false);
+    }
+
+    public Task SaveAsync(Dictionary<RpkiResource, string> resources)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<List<RpkiRoa>> LoadRpkiRoasAsync()
+    {
+        if (!File.Exists(_cacheFullName))
+            return null;
+
+        try
         {
-            var settings = new RpkiSettings();
+            var content = await File.ReadAllTextAsync(_cacheFullName).ConfigureAwait(false);
 
+            var file = JsonConvert.DeserializeObject<CacheFile>(content, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
 
-            for (var i = 0; i < 30; i++)
-            {
-                var key = _cfg[$"rpki:keys:{i}"];
-
-                if (string.IsNullOrEmpty(key))
-                    break;
-                
-                
-                settings.Keys.Add(key);
-            }
-
-            //
-            var timeout = _cfg["rpki:cache_timeout"];
-            if (string.IsNullOrEmpty(timeout))
-                timeout = "1:00:00";
-
-            var pattern = DurationPattern.CreateWithInvariantCulture("D:hh:mm");
-            settings.CacheTimeout = (int)pattern.Parse(timeout).Value.TotalSeconds;
-
-            return settings;
+            return file.RpkiRoa;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return null;
         }
     }
 
-    public interface ICacheManager
+    public Task<Dictionary<RpkiResource, string>> LoadRpkiResourcesAsync()
     {
-        // Async methods (recommended)
-        Task SaveAsync(List<RpkiRoa> rpkiRoa);
-        Task SaveAsync(Dictionary<RpkiResource, string> resources);
-        Task<List<RpkiRoa>> LoadRpkiRoasAsync();
-        Task<Dictionary<RpkiResource, string>> LoadRpkiResourcesAsync();
-        Task DropRoasCacheAsync();
-
-        // Sync methods (deprecated)
-        [Obsolete("Use SaveAsync instead to avoid blocking I/O operations")]
-        void Save(List<RpkiRoa> rpkiRoa);
-        [Obsolete("Use SaveAsync instead to avoid blocking I/O operations")]
-        void Save(Dictionary<RpkiResource, string> resources);
-        [Obsolete("Use LoadRpkiRoasAsync instead to avoid blocking I/O operations")]
-        List<RpkiRoa> LoadRpkiRoas();
-        [Obsolete("Use LoadRpkiResourcesAsync instead to avoid blocking I/O operations")]
-        Dictionary<RpkiResource, string> LoadRpkiResources();
-        [Obsolete("Use DropRoasCacheAsync instead to avoid blocking I/O operations")]
-        void DropRoasCache();
+        throw new NotImplementedException();
     }
 
-    class CacheFile
+    public Task DropRoasCacheAsync()
     {
-        public List<RpkiRoa> RpkiRoa { get; set; }
-        public string Resources { get; set; }
+        if (File.Exists(_cacheFullName))
+        {
+            // File.Delete doesn't have async version, use Task.Run for I/O operation
+            return Task.Run(() => File.Delete(_cacheFullName));
+        }
+        return Task.CompletedTask;
     }
 
-    public class CacheManager : ICacheManager
+    // Sync methods (deprecated, kept for backward compatibility)
+    public void Save(List<RpkiRoa> rpkiRoa)
     {
-        private RpkiSettings _settings;
+        var cacheFile = new CacheFile { RpkiRoa = rpkiRoa };
+        var json = JsonConvert.SerializeObject(cacheFile, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
 
-        public CacheManager(IRipeRpkiSettingsManager settings)
-        {
-            _settings = settings.LoadSettings();
-            
-
-            var folder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            _cacheFullName = Path.Combine(folder, CacheFileName);
-        }
-        
-        private readonly string _cacheFullName;
-        
-        private const string CacheFileName = "ripe.cache.json";
-
-        // Async methods (recommended)
-        public async Task SaveAsync(List<RpkiRoa> rpkiRoa)
-        {
-            var cacheFile = new CacheFile { RpkiRoa = rpkiRoa };
-            var json = JsonConvert.SerializeObject(cacheFile, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-            await File.WriteAllTextAsync(_cacheFullName, json).ConfigureAwait(false);
-        }
-
-        public Task SaveAsync(Dictionary<RpkiResource, string> resources)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<List<RpkiRoa>> LoadRpkiRoasAsync()
-        {
-            if (!File.Exists(_cacheFullName))
-                return null;
-
-            try
-            {
-                var content = await File.ReadAllTextAsync(_cacheFullName).ConfigureAwait(false);
-
-                var file = JsonConvert.DeserializeObject<CacheFile>(content, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-                return file.RpkiRoa;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return null;
-            }
-        }
-
-        public Task<Dictionary<RpkiResource, string>> LoadRpkiResourcesAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task DropRoasCacheAsync()
-        {
-            if (File.Exists(_cacheFullName))
-            {
-                // File.Delete doesn't have async version, use Task.Run for I/O operation
-                return Task.Run(() => File.Delete(_cacheFullName));
-            }
-            return Task.CompletedTask;
-        }
-
-        // Sync methods (deprecated, kept for backward compatibility)
-        public void Save(List<RpkiRoa> rpkiRoa)
-        {
-            var cacheFile = new CacheFile { RpkiRoa = rpkiRoa };
-            var json = JsonConvert.SerializeObject(cacheFile, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-            File.WriteAllText(_cacheFullName, json);
-        }
-
-        public void Save(Dictionary<RpkiResource, string> resources)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<RpkiRoa> LoadRpkiRoas()
-        {
-            if (!File.Exists(_cacheFullName))
-                return null;
-
-            try
-            {
-                var content = File.ReadAllText(_cacheFullName);
-
-                var file = JsonConvert.DeserializeObject<CacheFile>(content, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-
-                return file.RpkiRoa;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return null;
-            }
-        }
-
-        public Dictionary<RpkiResource, string> LoadRpkiResources()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DropRoasCache()
-        {
-            if (File.Exists(_cacheFullName))
-                File.Delete(_cacheFullName);
-        }
-    }
-    
-    public interface IRipeRouteManager
-    {
-        public RpkiResources GetRpkiResources(bool allowCache = false);
-        public IEnumerable<RpkiRoa> GetRpkiRoas(bool allowCache = false);
-        public RipeRouteRPKI GetRpkiState(RipeRoute resource);
+        File.WriteAllText(_cacheFullName, json);
     }
 
-    public interface IRipeRPKIRoute
+    public void Save(Dictionary<RpkiResource, string> resources)
     {
-        
-    }
-    
-
-    public interface IRipeDatabaseRoute
-    {
-        public Task Add(string route, string origin);
-        public Task Remove(string route, string origin);
-        
-        public Task Add(RipeRoute route);
-        public Task Remove(RipeRoute route);
+        throw new NotImplementedException();
     }
 
-    public class RipeRouteManager : IRipeRouteManager, IRipeDatabaseRoute
+    public List<RpkiRoa> LoadRpkiRoas()
     {
-        private readonly RpkiSettings _settings;
-        private readonly IRipeRpkiClient _clientRpki;
-        private readonly IRipeClient _clientRipe;
-        private readonly ICacheManager _cacheManager;
+        if (!File.Exists(_cacheFullName))
+            return null;
 
-
-        private Dictionary<RpkiResource, string> _cache;
-        
-        public RipeRouteManager(IRipeRpkiSettingsManager settings,
-            IRipeRpkiClient clientRpki,
-            IRipeClient clientRipe,
-                ICacheManager cache)
+        try
         {
-            _settings = settings.LoadSettings();
-            _clientRpki = clientRpki;
-            _clientRipe = clientRipe;
-            _cacheManager = cache;
+            var content = File.ReadAllText(_cacheFullName);
+
+            var file = JsonConvert.DeserializeObject<CacheFile>(content, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+
+            return file.RpkiRoa;
         }
-        
-        public RpkiResources GetRpkiResources(bool allowCache = false)
+        catch (Exception e)
         {
-            var rpkiResources = new RpkiResources { Resources = new List<RpkiResource>() };
-
-            if (_cache != null)
-            {
-                rpkiResources.Resources.AddRange(
-                    _cache.Select(c => c.Key)
-                );
-            }
-            else
-            {
-                _cache = new Dictionary<RpkiResource, string>();
-
-                foreach (var apiKey in _settings.Keys)
-                {
-                    var resourcesPlain = _clientRpki.GetResources(apiKey);
-
-                    foreach (var rpkiResource in resourcesPlain.Resources)
-                    {
-                        //its as number
-                        if (rpkiResource.StartsWith("AS"))
-                        {
-                            rpkiResources.Resources.Add(new RpkiResourceAsn{Asn = rpkiResource});
-                            continue;
-                        }
-
-                        if (rpkiResource.Contains("-"))
-                        {
-                            Console.WriteLine($"We got network - {rpkiResource}, cannot parce now. :(");
-                            continue;
-                        }
-
-                        var network = IPNetwork2.Parse(rpkiResource);
-
-                        if (network.AddressFamily == AddressFamily.InterNetwork)
-                        {
-                            rpkiResources.Resources.Add(new RpkiResourceIPv4 {Inetnum = rpkiResource});
-                            continue;
-                        }
-
-                        if (network.AddressFamily == AddressFamily.InterNetworkV6)
-                        {
-                            rpkiResources.Resources.Add(new RpkiResourceIPv6 {Inetnum6 = rpkiResource });
-                            continue;
-                        }
-
-                        throw new ArgumentException($"Object not supported - {rpkiResource}");
-                    }
-
-                    //Saving to cache
-                    foreach (var rpkiResource in rpkiResources.Resources)
-                    {
-                        if (!_cache.ContainsKey(rpkiResource))
-                            _cache.Add(rpkiResource, apiKey);
-                    }
-                    //end - Saving to cache
-                }
-            }
-
-            return rpkiResources;
+            Console.WriteLine(e);
+            return null;
         }
-       
-        public IEnumerable<RpkiRoa> GetRpkiRoas(bool allowCache = false)
-        {
-            List<RpkiRoa> result;
-            
-            if (allowCache)
-            {
-                 result = _cacheManager.LoadRpkiRoas();
+    }
 
-                 if (result != null)
-                     return result;
-            }
-            
-            result = new List<RpkiRoa>();
-            
+    public Dictionary<RpkiResource, string> LoadRpkiResources()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void DropRoasCache()
+    {
+        if (File.Exists(_cacheFullName))
+            File.Delete(_cacheFullName);
+    }
+}
+
+public interface IRipeRouteManager
+{
+    public RpkiResources GetRpkiResources(bool allowCache = false);
+    public IEnumerable<RpkiRoa> GetRpkiRoas(bool allowCache = false);
+    public RipeRouteRPKI GetRpkiState(RipeRoute resource);
+}
+
+public interface IRipeRPKIRoute
+{
+
+}
+
+
+public interface IRipeDatabaseRoute
+{
+    public Task Add(string route, string origin);
+    public Task Remove(string route, string origin);
+
+    public Task Add(RipeRoute route);
+    public Task Remove(RipeRoute route);
+}
+
+public class RipeRouteManager : IRipeRouteManager, IRipeDatabaseRoute
+{
+    private readonly RpkiSettings _settings;
+    private readonly IRipeRpkiClient _clientRpki;
+    private readonly IRipeClient _clientRipe;
+    private readonly ICacheManager _cacheManager;
+
+
+    private Dictionary<RpkiResource, string> _cache;
+
+    public RipeRouteManager(IRipeRpkiSettingsManager settings,
+        IRipeRpkiClient clientRpki,
+        IRipeClient clientRipe,
+        ICacheManager cache)
+    {
+        _settings = settings.LoadSettings();
+        _clientRpki = clientRpki;
+        _clientRipe = clientRipe;
+        _cacheManager = cache;
+    }
+
+    public RpkiResources GetRpkiResources(bool allowCache = false)
+    {
+        var rpkiResources = new RpkiResources { Resources = new List<RpkiResource>() };
+
+        if (_cache != null)
+        {
+            rpkiResources.Resources.AddRange(
+                _cache.Select(c => c.Key)
+            );
+        }
+        else
+        {
+            _cache = new Dictionary<RpkiResource, string>();
+
             foreach (var apiKey in _settings.Keys)
             {
-                var roas = _clientRpki.GetRoas(apiKey);
+                var resourcesPlain = _clientRpki.GetResources(apiKey);
 
-                foreach (var rpkiRoaPlain in roas.ToList())
+                foreach (var rpkiResource in resourcesPlain.Resources)
                 {
-                    var network = IPNetwork2.Parse(rpkiRoaPlain.prefix);
+                    //its as number
+                    if (rpkiResource.StartsWith("AS"))
+                    {
+                        rpkiResources.Resources.Add(new RpkiResourceAsn{Asn = rpkiResource});
+                        continue;
+                    }
+
+                    if (rpkiResource.Contains("-"))
+                    {
+                        Console.WriteLine($"We got network - {rpkiResource}, cannot parce now. :(");
+                        continue;
+                    }
+
+                    var network = IPNetwork2.Parse(rpkiResource);
 
                     if (network.AddressFamily == AddressFamily.InterNetwork)
                     {
-                        result.Add(new RpkiRoaIpv4(
-                            rpkiRoaPlain._numberOfValidsCaused,
-                            rpkiRoaPlain._numberOfInvalidsCaused,
-                            network.Cidr)
-                        {
-                            Asn = rpkiRoaPlain.asn,
-                            Prefix = rpkiRoaPlain.prefix,
-                            MaximalLength = rpkiRoaPlain.maximalLength
-                        });
-                        continue;
-                    } 
-                    if (network.AddressFamily == AddressFamily.InterNetworkV6)
-                    {
-                        result.Add(new RpkiRoaIpv6(
-                            rpkiRoaPlain._numberOfValidsCaused,
-                            rpkiRoaPlain._numberOfInvalidsCaused,
-                            network.Cidr)
-                        {
-                            Asn = rpkiRoaPlain.asn,
-                            Prefix = rpkiRoaPlain.prefix,
-                            MaximalLength = rpkiRoaPlain.maximalLength
-                        });
+                        rpkiResources.Resources.Add(new RpkiResourceIPv4 {Inetnum = rpkiResource});
                         continue;
                     }
 
-                    throw new ArgumentOutOfRangeException("prefix", $"Resource type {network.AddressFamily}");
+                    if (network.AddressFamily == AddressFamily.InterNetworkV6)
+                    {
+                        rpkiResources.Resources.Add(new RpkiResourceIPv6 {Inetnum6 = rpkiResource });
+                        continue;
+                    }
+
+                    throw new ArgumentException($"Object not supported - {rpkiResource}");
+                }
+
+                //Saving to cache
+                foreach (var rpkiResource in rpkiResources.Resources)
+                {
+                    if (!_cache.ContainsKey(rpkiResource))
+                        _cache.Add(rpkiResource, apiKey);
+                }
+                //end - Saving to cache
+            }
+        }
+
+        return rpkiResources;
+    }
+
+    public IEnumerable<RpkiRoa> GetRpkiRoas(bool allowCache = false)
+    {
+        List<RpkiRoa> result;
+
+        if (allowCache)
+        {
+            result = _cacheManager.LoadRpkiRoas();
+
+            if (result != null)
+                return result;
+        }
+
+        result = new List<RpkiRoa>();
+
+        foreach (var apiKey in _settings.Keys)
+        {
+            var roas = _clientRpki.GetRoas(apiKey);
+
+            foreach (var rpkiRoaPlain in roas.ToList())
+            {
+                var network = IPNetwork2.Parse(rpkiRoaPlain.prefix);
+
+                if (network.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    result.Add(new RpkiRoaIpv4(
+                        rpkiRoaPlain._numberOfValidsCaused,
+                        rpkiRoaPlain._numberOfInvalidsCaused,
+                        network.Cidr)
+                    {
+                        Asn = rpkiRoaPlain.asn,
+                        Prefix = rpkiRoaPlain.prefix,
+                        MaximalLength = rpkiRoaPlain.maximalLength
+                    });
+                    continue;
+                }
+                if (network.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    result.Add(new RpkiRoaIpv6(
+                        rpkiRoaPlain._numberOfValidsCaused,
+                        rpkiRoaPlain._numberOfInvalidsCaused,
+                        network.Cidr)
+                    {
+                        Asn = rpkiRoaPlain.asn,
+                        Prefix = rpkiRoaPlain.prefix,
+                        MaximalLength = rpkiRoaPlain.maximalLength
+                    });
+                    continue;
+                }
+
+                throw new ArgumentOutOfRangeException("prefix", $"Resource type {network.AddressFamily}");
+            }
+        }
+
+        _cacheManager.Save(result);
+
+        return result;
+    }
+
+    public RipeRouteRPKI GetRpkiState(RipeRoute route)
+    {
+        var roas = GetRpkiRoas(true);
+
+        var prefixRoute = roas.Where(r => r.Prefix == route["route"]).ToList();
+
+        // we have rpki records
+        if (prefixRoute.Any())
+        {
+            var result = RipeRouteRPKI.Invalid;
+
+            foreach (var rpkiRoa in prefixRoute)
+            {
+                if (route["origin"] == rpkiRoa.Asn)
+                {
+                    result = RipeRouteRPKI.Valid;
+                    break;
                 }
             }
-
-            _cacheManager.Save(result);
 
             return result;
         }
 
-        public RipeRouteRPKI GetRpkiState(RipeRoute route)
+        return RipeRouteRPKI.Unknown;
+    }
+
+    protected string GetRpkiKey(string network)
+    {
+        foreach (var keyValuePair in _cache)
         {
-            var roas = GetRpkiRoas(true);
-
-            var prefixRoute = roas.Where(r => r.Prefix == route["route"]).ToList();
-
-            // we have rpki records
-            if (prefixRoute.Any())
-            {
-                var result = RipeRouteRPKI.Invalid;
-
-                foreach (var rpkiRoa in prefixRoute)
-                {
-                    if (route["origin"] == rpkiRoa.Asn)
-                    {
-                        result = RipeRouteRPKI.Valid;
-                        break;
-                    }
-                }
-
-                return result;
-            }
-            
-            return RipeRouteRPKI.Unknown;
+            if (keyValuePair.Key.ToString() == network)
+                return keyValuePair.Value;
         }
 
-        protected string GetRpkiKey(string network)
+        return null;
+    }
+
+    private string FindKey(string route)
+    {
+        var net = IPNetwork2.Parse(route);
+
+        string key = "";
+
+        //getting api key
+        var rpkiResources = GetRpkiResources(true);
+
+        // version 4
+        if (net.AddressFamily == AddressFamily.InterNetwork)
         {
-            foreach (var keyValuePair in _cache)
+            var ipv4 = rpkiResources.Resources.OfType<RpkiResourceIPv4>();
+
+            foreach (var rpkiResourceIPv4 in ipv4)
             {
-                if (keyValuePair.Key.ToString() == network)
-                    return keyValuePair.Value;
-            }
+                var netRpki = IPNetwork2.Parse(rpkiResourceIPv4.Inetnum);
 
-            return null;
-        }
-
-        private string FindKey(string route)
-        {
-            var net = IPNetwork2.Parse(route);
-
-            string key = "";
-
-            //getting api key
-            var rpkiResources = GetRpkiResources(true);
-
-            // version 4
-            if (net.AddressFamily == AddressFamily.InterNetwork)
-            {
-                var ipv4 = rpkiResources.Resources.OfType<RpkiResourceIPv4>();
-
-                foreach (var rpkiResourceIPv4 in ipv4)
+                if (netRpki.Contains(net))
                 {
-                    var netRpki = IPNetwork2.Parse(rpkiResourceIPv4.Inetnum);
-
-                    if (netRpki.Contains(net))
-                    {
-                        key = GetRpkiKey(netRpki.ToString());
-                        break;
-                    }
+                    key = GetRpkiKey(netRpki.ToString());
+                    break;
                 }
             }
-
-            return key;
         }
 
-        public async Task Add(string route, string origin)
+        return key;
+    }
+
+    public async Task Add(string route, string origin)
+    {
+        var routeObject = new RipeRoute(route, origin);
+        await Add(routeObject).ConfigureAwait(false);
+        // ----- END DATABASE
+
+        var key = FindKey(route);
+
+        // We don't have RPKI key for this network
+        if (string.IsNullOrEmpty(key)) return;
+
+        var rpkiOperations = new RpkiOperations();
+        rpkiOperations.Added.Add(new PublishRpkiRoaPlain
         {
-            var routeObject = new RipeRoute(route, origin);
-            await Add(routeObject).ConfigureAwait(false);
-            // ----- END DATABASE
+            Prefix = route,
+            Asn = origin,
 
-            var key = FindKey(route);
+            // Load from config
+            MaximalLength = "32"
+        });
 
-            // We don't have RPKI key for this network
-            if (string.IsNullOrEmpty(key)) return;
+        _cacheManager.DropRoasCache();
+        await _clientRpki.RpkiOperation(key, rpkiOperations).ConfigureAwait(false);
+    }
 
-            var rpkiOperations = new RpkiOperations();
-            rpkiOperations.Added.Add(new PublishRpkiRoaPlain
-            {
-                Prefix = route,
-                Asn = origin,
+    public async Task Add(RipeRoute route)
+    {
+        var raw = await _clientRipe.AddObject(route).ConfigureAwait(false);
+    }
 
-                // Load from config
-                MaximalLength = "32"
-            });
+    public async Task Remove(RipeRoute route)
+    {
+        await _clientRipe.RemoveObject(route).ConfigureAwait(false);
+    }
 
-            _cacheManager.DropRoasCache();
-            await _clientRpki.RpkiOperation(key, rpkiOperations).ConfigureAwait(false);
-        }
-
-        public async Task Add(RipeRoute route)
-        {
-            var raw = await _clientRipe.AddObject(route).ConfigureAwait(false);
-        }
-
-        public async Task Remove(RipeRoute route)
-        {
-            await _clientRipe.RemoveObject(route).ConfigureAwait(false);
-        }
-
-        public async Task Remove(string route, string origin)
-        {
-            var routeObject = new RipeRoute(route, origin);
-            await Remove(routeObject).ConfigureAwait(false);
-        }
+    public async Task Remove(string route, string origin)
+    {
+        var routeObject = new RipeRoute(route, origin);
+        await Remove(routeObject).ConfigureAwait(false);
     }
 }

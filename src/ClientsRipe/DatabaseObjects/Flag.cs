@@ -1,7 +1,6 @@
-﻿namespace RipeDatabaseObjects
+﻿namespace RipeDatabaseObjects;
+
+public class Flag
 {
-    public class Flag
-    {
-        public string Value { get; set; }
-    }
+    public string Value { get; set; }
 }

@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace RipeDatabaseObjects
+namespace RipeDatabaseObjects;
+
+public class Flags
 {
-    public class Flags
-    {
-        public List<Flag> Flag { get; set; }
-    }
+    public List<Flag> Flag { get; set; }
 }
