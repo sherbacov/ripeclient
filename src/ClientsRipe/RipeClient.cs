@@ -72,15 +72,42 @@ namespace ClientsRipe
         Task<string> GetSecret();
     }
 
-    public class RipeClientAuthAnonymous : IRipeClientAuth
+    /// <summary>
+    /// Enhanced authentication interface that allows different authentication methods
+    /// to apply their credentials directly to the HTTP request
+    /// </summary>
+    public interface IRipeClientAuthEnhanced : IRipeClientAuth
+    {
+        /// <summary>
+        /// Applies authentication to the RestSharp request
+        /// </summary>
+        /// <param name="request">The RestRequest to apply authentication to</param>
+        Task ApplyAuthentication(RestRequest request);
+    }
+
+    /// <summary>
+    /// Anonymous authentication (no credentials)
+    /// Used for public read-only operations
+    /// </summary>
+    public class RipeClientAuthAnonymous : IRipeClientAuthEnhanced
     {
         public Task<string> GetSecret()
         {
             return Task.FromResult("");
         }
+
+        public Task ApplyAuthentication(RestRequest request)
+        {
+            // No authentication needed for anonymous access
+            return Task.CompletedTask;
+        }
     } 
     
-    public class RipeClientAuthPassword : IRipeClientAuth
+    /// <summary>
+    /// Authentication using password query parameter
+    /// Password is sent as a query string parameter (?password=xxx)
+    /// </summary>
+    public class RipeClientAuthPassword : IRipeClientAuthEnhanced
     {
         private readonly string _password;
 
@@ -88,10 +115,74 @@ namespace ClientsRipe
         {
             _password = password;
         }
-        
+
         public Task<string> GetSecret()
         {
             return Task.FromResult(_password);
+        }
+
+        public Task ApplyAuthentication(RestRequest request)
+        {
+            request.AddParameter("password", _password, ParameterType.QueryString);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Authentication using RIPE Database API Key
+    /// API keys are sent via the X-API-Key HTTP header
+    /// </summary>
+    public class RipeClientAuthApiKey : IRipeClientAuthEnhanced
+    {
+        private readonly string _apiKey;
+
+        public RipeClientAuthApiKey(string apiKey)
+        {
+            _apiKey = apiKey;
+        }
+
+        public Task<string> GetSecret()
+        {
+            return Task.FromResult(_apiKey);
+        }
+
+        public Task ApplyAuthentication(RestRequest request)
+        {
+            request.AddHeader("X-API-Key", _apiKey);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Authentication using HTTP Basic Authentication
+    /// Credentials are sent as Base64-encoded username:password in the Authorization header
+    /// </summary>
+    public class RipeClientAuthBasic : IRipeClientAuthEnhanced
+    {
+        private readonly string _username;
+        private readonly string _password;
+
+        public RipeClientAuthBasic(string username, string password)
+        {
+            _username = username;
+            _password = password;
+        }
+
+        public Task<string> GetSecret()
+        {
+            var credentials = Convert.ToBase64String(
+                Encoding.ASCII.GetBytes($"{_username}:{_password}")
+            );
+            return Task.FromResult(credentials);
+        }
+
+        public Task ApplyAuthentication(RestRequest request)
+        {
+            var credentials = Convert.ToBase64String(
+                Encoding.ASCII.GetBytes($"{_username}:{_password}")
+            );
+            request.AddHeader("Authorization", $"Basic {credentials}");
+            return Task.CompletedTask;
         }
     }
     
@@ -223,7 +314,15 @@ namespace ClientsRipe
             restRequest.AddBody(requestContent, "application/xml");
 
             //AUTH method
-            restRequest.AddParameter("password",   await _auth.GetSecret(), ParameterType.QueryString);
+            if (_auth is IRipeClientAuthEnhanced enhancedAuth)
+            {
+                await enhancedAuth.ApplyAuthentication(restRequest);
+            }
+            else
+            {
+                // Backward compatibility - assume password-based auth
+                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+            }
             
             RestClient client;
             
@@ -332,8 +431,16 @@ namespace ClientsRipe
             };
 
             //AUTH method
-            restRequest.AddParameter("password",  await _auth.GetSecret(), ParameterType.QueryString);
-            
+            if (_auth is IRipeClientAuthEnhanced enhancedAuth)
+            {
+                await enhancedAuth.ApplyAuthentication(restRequest);
+            }
+            else
+            {
+                // Backward compatibility - assume password-based auth
+                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+            }
+
             var client = new RestClient(_baseUrl);
             restRequest.AddBody(requestContent, "application/xml");
             
@@ -360,7 +467,15 @@ namespace ClientsRipe
             restRequest.Method = Method.Delete;
             
             //AUTH method
-            restRequest.AddParameter("password",  await _auth.GetSecret(), ParameterType.QueryString);
+            if (_auth is IRipeClientAuthEnhanced enhancedAuth)
+            {
+                await enhancedAuth.ApplyAuthentication(restRequest);
+            }
+            else
+            {
+                // Backward compatibility - assume password-based auth
+                restRequest.AddParameter("password", await _auth.GetSecret(), ParameterType.QueryString);
+            }
 
             var client = new RestClient(_baseUrl);
             
