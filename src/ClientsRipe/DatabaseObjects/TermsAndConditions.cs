@@ -1,8 +1,7 @@
-﻿namespace RipeDatabaseObjects
+﻿namespace RipeDatabaseObjects;
+
+public class TermsAndConditions
 {
-    public class TermsAndConditions
-    {
-        public string Type { get; set; }
-        public string Href { get; set; }
-    }
+    public string Type { get; set; }
+    public string Href { get; set; }
 }

@@ -1,4 +1,3 @@
-﻿namespace RipeDatabaseObjects
-{
-    public class PrimaryKey : Attributes { }
-}
+﻿namespace RipeDatabaseObjects;
+
+public class PrimaryKey : Attributes { }

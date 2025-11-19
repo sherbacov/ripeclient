@@ -1,7 +1,6 @@
-﻿namespace RipeDatabaseObjects
+﻿namespace RipeDatabaseObjects;
+
+public class QueryString
 {
-    public class QueryString
-    {
-        public string Value { get; set; }
-    }
+    public string Value { get; set; }
 }

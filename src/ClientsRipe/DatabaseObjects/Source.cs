@@ -1,10 +1,9 @@
 ﻿using System.Xml.Serialization;
 
-namespace RipeDatabaseObjects
+namespace RipeDatabaseObjects;
+
+public class Source
 {
-    public class Source
-    {
-        [XmlAttribute(AttributeName = "id")]
-        public string Id { get; set; }
-    }
+    [XmlAttribute(AttributeName = "id")]
+    public string Id { get; set; }
 }

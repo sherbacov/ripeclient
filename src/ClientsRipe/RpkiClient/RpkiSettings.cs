@@ -1,18 +1,17 @@
 ﻿using System.Collections.Generic;
 
-namespace ClientsRpki
+namespace ClientsRpki;
+
+public class RpkiSettings
 {
-    public class RpkiSettings
+    public RpkiSettings()
     {
-        public RpkiSettings()
-        {
-            Keys = new List<string>();
-        }
-        
-        public List<string> Keys { get; set; }
-
-        public string MaxLength { get; set; }
-
-        public int CacheTimeout { get; set; }
+        Keys = new List<string>();
     }
+        
+    public List<string> Keys { get; set; }
+
+    public string MaxLength { get; set; }
+
+    public int CacheTimeout { get; set; }
 }

@@ -12,17 +12,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build -c Release --no-restore /p:Version=1.0.${{github.run_number}};AssemblyVersion=1.0.${{github.run_number}};FileVersion=1.0.${{github.run_number}};PackageVersion=1.0.${{github.run_number}} 
-#      - name: Test
-#        run: dotnet test --no-build --verbosity normal
+        run: dotnet build -c Release --no-restore /p:Version=1.1.${{github.run_number}};AssemblyVersion=1.1.${{github.run_number}};FileVersion=1.1.${{github.run_number}};PackageVersion=1.1.${{github.run_number}}
+      - name: Test
+        run: dotnet test -c Release --no-restore --verbosity normal
+        env:
+          LIR_RESOURCES_API_KEY: ${{ secrets.LIR_RESOURCES_API_KEY }}
       - name: Publish Nuget
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: dotnet nuget push src/ClientsRipe/bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
